@@ -151,7 +151,23 @@ abstract class Controller extends BaseController
             // Fix Unique validation rule on Edit Mode
             if ($is_update) {
                 foreach ($rules[$fieldName] as &$fieldRule) {
+                    // 'Unique' Validation Rule
                     if (strpos(strtoupper($fieldRule), 'UNIQUE') !== false) {
+                        // If rule is something like 'unique:case_studies,slug'
+                        if (($pos = strpos($fieldRule, ":")) !== false) {
+                            $ruleParams = substr($fieldRule, $pos + 1);
+                            $ruleParams = explode(',', $ruleParams);
+
+                            if (count((array)$ruleParams) > 0) {
+                                $table = isset($ruleParams[0]) ? $ruleParams[0] : null;
+                                $column = isset($ruleParams[1]) ? $ruleParams[1] : null;
+
+                                $fieldRule = \Illuminate\Validation\Rule::unique($table, $column)->ignore($id);
+                                continue;
+                            }
+                        }
+
+                        // Otherwise make some assumptions about the Unique rule
                         $fieldRule = \Illuminate\Validation\Rule::unique($slug)->ignore($id);
                     }
                 }
